@@ -30,17 +30,24 @@ public class MemeResponder {
 	@Async
 	public void replyToMentions(List<Tweet> tweets, List<Tweet> memeArchive) {
 		LOGGER.info("Replying to mentions");
-		if (homeTweets.size() == 0) {
+		if (homeTweets.isEmpty()) {
 			homeTweets.addAll(twitter.timelineOperations().getUserTimeline(200));
 		}
-
 		outerloop: for (Tweet tweet : tweets) {
 			for (Tweet homeTweet : homeTweets) {
-				// TODO: TEST
-				if (tweet.getId() == homeTweet.getInReplyToStatusId()) {
+				// TODO: Test
+				// TODO: Redo implementation
+				Long replyStatusId = homeTweet.getInReplyToStatusId();
+				if(tweet.getId() == homeTweet.getId()){
+					continue outerloop;
+				}
+				if (null == replyStatusId) {
+					LOGGER.info("Saw own tweet");
+					continue;
+				} else if (tweet.getId() == homeTweet.getInReplyToStatusId()) {
 					LOGGER.info("Duplicate response detected: " + tweet.getIdStr());
 					// TODO: Don't like how I break, make a new method
-					break outerloop;
+					continue outerloop;
 				}
 			}
 			String username = "@" + tweet.getFromUser();
@@ -51,7 +58,11 @@ public class MemeResponder {
 					memeTweet.getIdStr());
 			TweetData tweetData = new TweetData(username + customMessageArray[randomCustomMessageIndex] + memeLink);
 			tweetData.inReplyToStatus(tweet.getId());
-			twitter.timelineOperations().updateStatus(tweetData);
+			// TODO: Test homeTweets addition
+			// TODO: Add profiles for posting tweet
+			// homeTweets.add(twitter.timelineOperations().updateStatus(tweetData));
+			System.out.println("POSTED: " + tweet.getText());
+			LOGGER.info("Sent tweet to: " + tweet.getFromUser());
 		}
 	}
 }

@@ -60,8 +60,8 @@ public class MemeResponder {
 			tweetData.inReplyToStatus(tweet.getId());
 			// TODO: Test homeTweets addition
 			// TODO: Add profiles for posting tweet
-			// homeTweets.add(twitter.timelineOperations().updateStatus(tweetData));
-			System.out.println("POSTED: " + tweet.getText());
+			homeTweets.add(twitter.timelineOperations().updateStatus(tweetData));
+			// System.out.println("POSTED: " + tweet.getText());
 			LOGGER.info("Sent tweet to: " + tweet.getFromUser());
 		}
 	}

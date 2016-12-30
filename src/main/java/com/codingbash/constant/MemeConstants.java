@@ -19,7 +19,7 @@ public class MemeConstants {
 	public static final int POST_TWEET_INTERVAL_TIME_IN_MS = 900000;
 
 	// TODO: Put in application.yaml
-	public static final int MAX_WAIT_RESPONSE_TIME_IN_MS = 900000;
+	public static final int MAX_WAIT_RESPONSE_TIME_IN_MS = 30000;
 
 	// TODO: Put in application.yaml
 	public static final int RATE_LIMIT_CUSHION_AMOUNT = 5;

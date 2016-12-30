@@ -50,6 +50,7 @@ public class MemeTriggerScheduler {
 		}
 	}
 
+	// TODO: Change to cron scheduler!!!
 	@Scheduled(fixedRate = 360000)
 	public void memeReloadTrigger() {
 		LOGGER.info("Meme reload triggered");

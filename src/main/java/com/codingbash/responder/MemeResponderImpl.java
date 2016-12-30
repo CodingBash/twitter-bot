@@ -4,10 +4,12 @@ import static com.codingbash.constant.MemeConstants.CUSTOM_MESSAGE_ARRAY;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.social.twitter.api.Tweet;
@@ -28,15 +30,19 @@ public class MemeResponderImpl implements MemeResponder {
 	@Autowired
 	private MemeSender sender;
 
-	private List<Tweet> homeTweets = new ArrayList<Tweet>();
+	@Autowired
+	private Queue<TweetDataPayload> postTweetQueue;
 
-	@Async
+	@Autowired
+	@Qualifier("homeTweets")
+	private List<Tweet> homeTweets;
+
 	@Override
 	public void replyToMentions(List<Tweet> mentions, List<Tweet> memeArchive) {
 		LOGGER.debug("< #replyToMentions: mentions.size()={}, memeArchive.size()={}, homeTweets.size()={}",
 				mentions.size(), memeArchive.size(), homeTweets.size());
 
-		mentions = removeDuplicates(mentions);
+		//mentions = removeDuplicates(mentions);
 
 		LOGGER.debug("< Responding to each mention: mentions.size()={}", mentions.size());
 		TweetDataPayload payload;
@@ -44,7 +50,16 @@ public class MemeResponderImpl implements MemeResponder {
 			payload = new TweetDataPayload();
 			payload.setMessage(constructReplyMessage(mention, memeArchive));
 			payload.setInReplyToStatusId(mention.getId());
-			homeTweets.add(sender.sendTweet(payload));
+			try {
+				postTweetQueue.add(payload);
+			} catch (IllegalStateException ise) {
+				try {
+					Thread.sleep(900000);
+					postTweetQueue.add(payload);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 

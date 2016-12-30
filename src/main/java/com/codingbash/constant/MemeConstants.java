@@ -11,4 +11,13 @@ public class MemeConstants {
 
 	// TODO: Retrieve from database/cache
 	public static final int MEME_ARCHIVE_SIZE_LIMIT = 50;
+
+	// TODO: Put in application.yaml
+	public static final int POST_TWEET_INTERVAL_AMOUNT = 5; // 20;
+
+	// TODO: Put in application.yaml
+	public static final int POST_TWEET_INTERVAL_TIME_IN_MS = 30000;// 900000;
+	
+	// TODO: Put in application.yaml
+	public static final int MAX_WAIT_RESPONSE_TIME_IN_MS = 30000;// 900000;
 }

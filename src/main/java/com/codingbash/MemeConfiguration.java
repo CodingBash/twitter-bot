@@ -1,8 +1,13 @@
 package com.codingbash;
 
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,8 +16,12 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.social.twitter.api.Tweet;
 import org.springframework.social.twitter.api.Twitter;
 import org.springframework.social.twitter.api.impl.TwitterTemplate;
+
+import com.codingbash.model.PostTweetLimiter;
+import com.codingbash.model.TweetDataPayload;
 
 @Configuration
 public class MemeConfiguration {
@@ -55,5 +64,23 @@ public class MemeConfiguration {
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.setPoolSize(2);
 		return scheduler;
+	}
+
+	@Bean
+	@Lazy
+	public Queue<TweetDataPayload> postTweetQueue() {
+		return new ConcurrentLinkedQueue<TweetDataPayload>();
+	}
+
+	@Bean
+	public PostTweetLimiter limiter() {
+		PostTweetLimiter limiter = new PostTweetLimiter();
+		return limiter;
+	}
+
+	@Bean
+	@Qualifier("homeTweets")
+	public List<Tweet> homeList() {
+		return new CopyOnWriteArrayList<Tweet>();
 	}
 }

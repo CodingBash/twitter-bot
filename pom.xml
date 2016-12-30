@@ -5,7 +5,7 @@
 
 	<groupId>com.codingbash</groupId>
 	<artifactId>twitter-memebot</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-RELEASE</version>
 	<packaging>war</packaging>
 
 	<name>twitter-memebot</name>

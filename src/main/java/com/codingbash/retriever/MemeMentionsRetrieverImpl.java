@@ -7,10 +7,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.context.annotation.Profile;
+import org.springframework.social.twitter.api.ResourceFamily;
 import org.springframework.social.twitter.api.Tweet;
 import org.springframework.social.twitter.api.Twitter;
 import org.springframework.stereotype.Component;
+
+import com.codingbash.MemeUtility;
 
 @Lazy
 @Component
@@ -20,6 +22,9 @@ public class MemeMentionsRetrieverImpl implements MemeMentionsRetriever {
 
 	@Autowired
 	private Twitter twitter;
+	
+	@Autowired
+	private MemeUtility utility;
 
 	private Long lastTweetId = null;
 	private static final int maxPageSize = 20;
@@ -29,10 +34,10 @@ public class MemeMentionsRetrieverImpl implements MemeMentionsRetriever {
 	public List<Tweet> retrieveMentions() {
 		LOGGER.info("<> Mentions being retrieved");
 		if (twitter.isAuthorized()) {
+			utility.checkRateLimit(ResourceFamily.STATUSES, "/statuses/mentions_timeline");
 			List<Tweet> allMentions = (lastTweetId != null)
 					? twitter.timelineOperations().getMentions(maxPageSize, lastTweetId, maxTweetId)
 					: twitter.timelineOperations().getMentions();
-
 			/*
 			 * Set the most recent tweet ID
 			 */

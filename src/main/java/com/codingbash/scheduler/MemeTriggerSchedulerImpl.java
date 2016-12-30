@@ -1,9 +1,9 @@
 package com.codingbash.scheduler;
 
+import static com.codingbash.constant.MemeConstants.MAX_WAIT_RESPONSE_TIME_IN_MS;
 import static com.codingbash.constant.MemeConstants.MEME_ACCOUNTS;
 import static com.codingbash.constant.MemeConstants.MEME_ARCHIVE_SIZE_LIMIT;
 import static com.codingbash.constant.MemeConstants.POST_TWEET_INTERVAL_TIME_IN_MS;
-import static com.codingbash.constant.MemeConstants.MAX_WAIT_RESPONSE_TIME_IN_MS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,10 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.social.twitter.api.ResourceFamily;
 import org.springframework.social.twitter.api.Tweet;
 import org.springframework.social.twitter.api.Twitter;
 import org.springframework.stereotype.Component;
 
+import com.codingbash.MemeUtility;
 import com.codingbash.model.PostTweetLimiter;
 import com.codingbash.model.TweetDataPayload;
 import com.codingbash.responder.MemeResponder;
@@ -47,6 +49,9 @@ public class MemeTriggerSchedulerImpl implements MemeTriggerScheduler {
 	private MemeResponder memeResponder;
 
 	@Autowired
+	private MemeUtility utility;
+
+	@Autowired
 	private Queue<TweetDataPayload> postTweetQueue;
 
 	@Autowired
@@ -63,14 +68,29 @@ public class MemeTriggerSchedulerImpl implements MemeTriggerScheduler {
 
 	private boolean responseFlag = false;
 
-	// TODO: Rate limit avoidance
+	@Scheduled(fixedDelay = 1000)
+	public void sendResponse() {
+		TweetDataPayload payload = postTweetQueue.peek();
+		// LOGGER.info("<> Sending tweet: limiter.get()={}, postTweetQueue.size={}", limiter.get(), postTweetQueue.size());
+		if (payload != null) {
+			if (limiter.permit()) {
+				homeTweets.add(memeSender.sendTweet(payload));
+				postTweetQueue.remove();
+			}
+		} else {
+			// LOGGER.info("<> Post Tweet Queue is empty");
+			responseFlag = true;
+		}
+
+	}
+
 	@Override
 	@Scheduled(fixedDelay = MAX_WAIT_RESPONSE_TIME_IN_MS)
 	public void responseTrigger() {
 		if (responseFlag == true) {
 			LOGGER.info("<> Response triggered");
 			List<Tweet> mentions = memeMentionsRetriever.retrieveMentions();
-			LOGGER.info("<> New mentions: mentions.size()={} " + mentions.size());
+			LOGGER.info("<> New mentions: mentions.size()={}", mentions.size());
 
 			if (mentions != null && mentions.size() != 0) {
 				while (memeArchive.size() == 0) {
@@ -89,26 +109,12 @@ public class MemeTriggerSchedulerImpl implements MemeTriggerScheduler {
 		reloadTheMemes();
 	}
 
-	@Scheduled(fixedDelay = 1000)
-	public void sendResponse() {
-		TweetDataPayload payload = postTweetQueue.peek();
-		if (payload != null) {
-			if (limiter.permit()) {
-				homeTweets.add(memeSender.sendTweet(payload));
-				postTweetQueue.remove();
-			}
-		} else {
-			responseFlag = true;
-		}
-
-	}
-
 	@Scheduled(fixedRate = POST_TWEET_INTERVAL_TIME_IN_MS)
 	public void refreshCounter() {
+		LOGGER.info("<> Refreshing the post limiter from a count of {}", limiter.get());
 		limiter.refresh();
 	}
 
-	@Override
 	public synchronized void reloadTheMemes() {
 		LOGGER.info("< #reloadTheMemes(): current memeArchive.size()={}", memeArchive.size());
 		List<String> memeAccounts = new ArrayList<String>();
@@ -118,6 +124,7 @@ public class MemeTriggerSchedulerImpl implements MemeTriggerScheduler {
 		final int MEME_ACCOUNT_SIZE_LIMIT = MEME_ARCHIVE_SIZE_LIMIT / memeAccounts.size();
 		memeArchive.clear();
 		for (String memeAccount : memeAccounts) {
+			utility.checkRateLimit(ResourceFamily.STATUSES, "/statuses/user_timeline");
 			memeArchive.addAll(twitter.timelineOperations().getUserTimeline(memeAccount, MEME_ACCOUNT_SIZE_LIMIT));
 		}
 		LOGGER.info("> #reloadTheMemes(): memeArchive.size()={}", memeArchive.size());

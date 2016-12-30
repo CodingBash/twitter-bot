@@ -16,11 +16,11 @@ public class MemeSenderDevelopmentImpl implements MemeSender {
 
 	@Override
 	public Tweet sendTweet(TweetDataPayload payload) {
-		LOGGER.debug("< Sending tweet: payload.getInReplyToStatusId{}, payload.getMessage()={}",
+		LOGGER.info("< Sending tweet: payload.getInReplyToStatusId{}, payload.getMessage()={}",
 				payload.getInReplyToStatusId(), payload.getMessage());
 		System.out.printf("SENDING TWEET: statusId=%s, message=%s%n", payload.getInReplyToStatusId(),
 				payload.getMessage());
-		LOGGER.debug("> Sent tweet");
+		LOGGER.info("> Sent tweet");
 		return null;
 	}
 

@@ -1,7 +1,5 @@
 package com.codingbash.responder;
 
-import java.util.Queue;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,14 +22,11 @@ public class MemeSenderProductionImpl implements MemeSender {
 
 	@Override
 	public Tweet sendTweet(TweetDataPayload payload) {
-		LOGGER.debug("< Sending tweet: payload.getInReplyToStatusId{}, payload.getMessage()={}",
+		LOGGER.info("< Sending tweet: payload.getInReplyToStatusId{}, payload.getMessage()={}",
 				payload.getInReplyToStatusId(), payload.getMessage());
-
 		TweetData tweetData = new TweetData(payload.getMessage()).inReplyToStatus(payload.getInReplyToStatusId());
-
 		Tweet sentTweet = twitter.timelineOperations().updateStatus(tweetData);
-
-		LOGGER.debug("> Sent tweet: sentTweet.getId()={}", sentTweet.getId());
+		LOGGER.info("> Sent tweet: sentTweet.getId()={}", sentTweet.getId());
 		return sentTweet;
 	}
 }

@@ -6,6 +6,4 @@ public interface MemeTriggerScheduler {
 
 	public void memeReloadTrigger();
 
-	public void reloadTheMemes();
-
 }

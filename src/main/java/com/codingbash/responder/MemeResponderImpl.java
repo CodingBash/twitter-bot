@@ -1,6 +1,7 @@
 package com.codingbash.responder;
 
 import static com.codingbash.constant.MemeConstants.CUSTOM_MESSAGE_ARRAY;
+import static com.codingbash.constant.MemeConstants.MAX_WAIT_RESPONSE_TIME_IN_MS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.social.twitter.api.Tweet;
 import org.springframework.social.twitter.api.Twitter;
 import org.springframework.stereotype.Component;
@@ -28,9 +28,6 @@ public class MemeResponderImpl implements MemeResponder {
 	private Twitter twitter;
 
 	@Autowired
-	private MemeSender sender;
-
-	@Autowired
 	private Queue<TweetDataPayload> postTweetQueue;
 
 	@Autowired
@@ -39,43 +36,48 @@ public class MemeResponderImpl implements MemeResponder {
 
 	@Override
 	public void replyToMentions(List<Tweet> mentions, List<Tweet> memeArchive) {
-		LOGGER.debug("< #replyToMentions: mentions.size()={}, memeArchive.size()={}, homeTweets.size()={}",
+		LOGGER.info("< #replyToMentions: mentions.size()={}, memeArchive.size()={}, homeTweets.size()={}",
 				mentions.size(), memeArchive.size(), homeTweets.size());
 
-		//mentions = removeDuplicates(mentions);
+		mentions = removeDuplicates(mentions);
 
-		LOGGER.debug("< Responding to each mention: mentions.size()={}", mentions.size());
+		LOGGER.info("< Responding to each mention: mentions.size()={}", mentions.size());
 		TweetDataPayload payload;
 		for (Tweet mention : mentions) {
 			payload = new TweetDataPayload();
 			payload.setMessage(constructReplyMessage(mention, memeArchive));
 			payload.setInReplyToStatusId(mention.getId());
-			try {
-				postTweetQueue.add(payload);
-			} catch (IllegalStateException ise) {
-				try {
-					Thread.sleep(900000);
-					postTweetQueue.add(payload);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+
+			boolean addedSuccessfully = false;
+			do {
+				addedSuccessfully = postTweetQueue.offer(payload);
+				if (addedSuccessfully == false) {
+					LOGGER.warn("<> UNABLE TO POLL QUEUE, SLEEPING FOR {}", MAX_WAIT_RESPONSE_TIME_IN_MS);
+					try {
+						Thread.sleep(MAX_WAIT_RESPONSE_TIME_IN_MS);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
-			}
+			} while (addedSuccessfully == false);
+
 		}
+
 	}
 
 	public List<Tweet> removeDuplicates(List<Tweet> mentions) {
-		LOGGER.debug("< #removeDuplicates(): mentions.size()={}", mentions.size());
+		LOGGER.info("< #removeDuplicates(): mentions.size()={}", mentions.size());
 
 		if (homeTweets.isEmpty()) {
-			LOGGER.debug("< homeTweets empty - currently retrieving");
+			LOGGER.info("< homeTweets empty - currently retrieving");
 			homeTweets.addAll(twitter.timelineOperations().getUserTimeline(200));
-			LOGGER.debug("> Retrieved homeTweets: homeTweets.size()={}", homeTweets.size());
+			LOGGER.info("> Retrieved homeTweets: homeTweets.size()={}", homeTweets.size());
 		}
 
 		List<Tweet> sanitizedMentions = new ArrayList<Tweet>(mentions.size());
 
 		mentionIteration: for (Tweet mention : mentions) {
-			LOGGER.debug("<> Checking for duplicates");
+			LOGGER.info("<> Checking for duplicates");
 			homeIteration: for (Tweet homeTweet : homeTweets) {
 				Long replyStatusId = homeTweet.getInReplyToStatusId();
 				if (mention.getId() == homeTweet.getId()) {
@@ -93,7 +95,7 @@ public class MemeResponderImpl implements MemeResponder {
 			sanitizedMentions.add(mention);
 		}
 
-		LOGGER.debug("> #removeDuplicates(): sanitizedMentions.size()={}", sanitizedMentions.size());
+		LOGGER.info("> #removeDuplicates(): sanitizedMentions.size()={}", sanitizedMentions.size());
 		return sanitizedMentions;
 	}
 

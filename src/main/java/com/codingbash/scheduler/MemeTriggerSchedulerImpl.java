@@ -1,4 +1,7 @@
-package com.codingbash;
+package com.codingbash.scheduler;
+
+import static com.codingbash.constant.MemeConstants.MEME_ACCOUNTS;
+import static com.codingbash.constant.MemeConstants.MEME_ARCHIVE_SIZE_LIMIT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +15,9 @@ import org.springframework.social.twitter.api.Tweet;
 import org.springframework.social.twitter.api.Twitter;
 import org.springframework.stereotype.Component;
 
+import com.codingbash.responder.MemeResponder;
+import com.codingbash.retriever.MemeMentionsRetriever;
+
 /**
  * Schedules a trigger to retrieve all recent mentions and initiate reply
  * 
@@ -19,11 +25,11 @@ import org.springframework.stereotype.Component;
  *
  */
 @Component
-@Profile({"development", "production"})
+@Profile({ "development", "production" })
 public class MemeTriggerSchedulerImpl implements MemeTriggerScheduler {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MemeTriggerSchedulerImpl.class);
-	
+
 	@Autowired
 	private Twitter twitter;
 
@@ -35,46 +41,43 @@ public class MemeTriggerSchedulerImpl implements MemeTriggerScheduler {
 
 	private List<Tweet> memeArchive = new ArrayList<Tweet>();
 
-	// TODO: Remove these state variables
-	private boolean reloadTheMemesFlag = false;
-
 	// TODO: Rate limit avoidance
 	@Override
 	@Scheduled(fixedDelay = 10000)
 	public void responseTrigger() {
-		LOGGER.info("Response triggered");
+		LOGGER.info("<> Response triggered");
 		List<Tweet> mentions = memeMentionsRetriever.retrieveMentions();
-		LOGGER.info("New mentions: " + mentions.size());
+		LOGGER.info("<> New mentions: mentions.size()={} " + mentions.size());
+
 		if (mentions != null && mentions.size() != 0) {
-			while (reloadTheMemesFlag == true || memeArchive.size() == 0) {
+			while (memeArchive.size() == 0) {
 				reloadTheMemes();
 			}
 			memeResponder.replyToMentions(mentions, memeArchive);
 		}
 	}
 
-	// TODO: Change to cron scheduler!!!
+	// Scheduled for 3AM server time
 	@Override
-	@Scheduled(fixedRate = 360000)
+	@Scheduled(cron = "0 0 3 * * ?")
 	public void memeReloadTrigger() {
-		LOGGER.info("Meme reload triggered");
-		reloadTheMemesFlag = true;
+		LOGGER.info("<> Meme reload triggered");
+		reloadTheMemes();
 	}
 
 	@Override
-	public void reloadTheMemes() {
-		LOGGER.info("Memes reloading");
-		// TODO: Store this externally (cache, .properties, etc)
+	public synchronized void reloadTheMemes() {
+		LOGGER.info("< #reloadTheMemes(): current memeArchive.size()={}", memeArchive.size());
 		List<String> memeAccounts = new ArrayList<String>();
-		memeAccounts.add("memearchive");
-		memeAccounts.add("FreeMemesKids");
-		memeAccounts.add("themostdank");
-		memeAccounts.add("MemeSupplier");
-		memeAccounts.add("DailyMemeSupply");
-		for (String memeAccount : memeAccounts) {
-			memeArchive.addAll(twitter.timelineOperations().getUserTimeline(memeAccount));
+		for (String memeAccount : MEME_ACCOUNTS) {
+			memeAccounts.add(memeAccount);
 		}
-		reloadTheMemesFlag = false;
+		final int MEME_ACCOUNT_SIZE_LIMIT = MEME_ARCHIVE_SIZE_LIMIT / memeAccounts.size();
+		memeArchive.clear();
+		for (String memeAccount : memeAccounts) {
+			memeArchive.addAll(twitter.timelineOperations().getUserTimeline(memeAccount, MEME_ACCOUNT_SIZE_LIMIT));
+		}
+		LOGGER.info("> #reloadTheMemes(): memeArchive.size()={}", memeArchive.size());
 	}
 
 }

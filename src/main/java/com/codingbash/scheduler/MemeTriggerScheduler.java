@@ -1,4 +1,4 @@
-package com.codingbash;
+package com.codingbash.scheduler;
 
 public interface MemeTriggerScheduler {
 

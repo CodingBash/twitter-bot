@@ -1,4 +1,4 @@
-package com.codingbash;
+package com.codingbash.retriever;
 
 import java.util.List;
 

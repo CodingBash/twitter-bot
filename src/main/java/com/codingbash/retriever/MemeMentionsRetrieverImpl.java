@@ -1,4 +1,4 @@
-package com.codingbash;
+package com.codingbash.retriever;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 @Lazy
 @Component
-@Profile({ "development", "production" })
 public class MemeMentionsRetrieverImpl implements MemeMentionsRetriever {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MemeMentionsRetrieverImpl.class);
@@ -28,23 +27,20 @@ public class MemeMentionsRetrieverImpl implements MemeMentionsRetriever {
 
 	@Override
 	public List<Tweet> retrieveMentions() {
-		LOGGER.info("Mentions being retrieved");
+		LOGGER.info("<> Mentions being retrieved");
 		if (twitter.isAuthorized()) {
-			/*
-			 * Retrieve latest mentions
-			 */
-			List<Tweet> homeTweets = (lastTweetId != null)
+			List<Tweet> allMentions = (lastTweetId != null)
 					? twitter.timelineOperations().getMentions(maxPageSize, lastTweetId, maxTweetId)
 					: twitter.timelineOperations().getMentions();
 
 			/*
 			 * Set the most recent tweet ID
 			 */
-			if (homeTweets.size() > 0) {
-				lastTweetId = homeTweets.get(0).getId();
+			if (allMentions.size() > 0) {
+				lastTweetId = allMentions.get(0).getId();
 			}
 
-			return homeTweets;
+			return allMentions;
 		}
 
 		return new ArrayList<Tweet>();

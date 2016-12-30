@@ -57,7 +57,6 @@ public class MemeTriggerSchedulerImpl implements MemeTriggerScheduler {
 		}
 	}
 
-	// Scheduled for 3AM server time
 	@Override
 	@Scheduled(cron = "0 0 3 * * ?")
 	public void memeReloadTrigger() {

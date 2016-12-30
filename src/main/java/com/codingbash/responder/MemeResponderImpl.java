@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.social.twitter.api.Tweet;
 import org.springframework.social.twitter.api.Twitter;
@@ -45,7 +44,7 @@ public class MemeResponderImpl implements MemeResponder {
 			payload = new TweetDataPayload();
 			payload.setMessage(constructReplyMessage(mention, memeArchive));
 			payload.setInReplyToStatusId(mention.getId());
-			sender.sendTweet(payload);
+			homeTweets.add(sender.sendTweet(payload));
 		}
 	}
 

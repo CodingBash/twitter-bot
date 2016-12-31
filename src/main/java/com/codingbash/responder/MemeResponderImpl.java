@@ -3,6 +3,7 @@ package com.codingbash.responder;
 import static com.codingbash.constant.MemeConstants.CUSTOM_MESSAGE_ARRAY;
 import static com.codingbash.constant.MemeConstants.MAX_WAIT_RESPONSE_TIME_IN_MS;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -12,6 +13,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.social.twitter.api.MediaEntity;
 import org.springframework.social.twitter.api.Tweet;
 import org.springframework.social.twitter.api.Twitter;
 import org.springframework.stereotype.Component;
@@ -44,10 +48,7 @@ public class MemeResponderImpl implements MemeResponder {
 		LOGGER.info("< Responding to each mention: mentions.size()={}", mentions.size());
 		TweetDataPayload payload;
 		for (Tweet mention : mentions) {
-			payload = new TweetDataPayload();
-			payload.setMessage(constructReplyMessage(mention, memeArchive));
-			payload.setInReplyToStatusId(mention.getId());
-
+			payload = constructTweetDataPayload(mention, memeArchive);
 			boolean addedSuccessfully = false;
 			do {
 				addedSuccessfully = postTweetQueue.offer(payload);
@@ -77,7 +78,7 @@ public class MemeResponderImpl implements MemeResponder {
 		List<Tweet> sanitizedMentions = new ArrayList<Tweet>(mentions.size());
 
 		mentionIteration: for (Tweet mention : mentions) {
-			
+
 			/*
 			 * If mention is already handled (duplicate)
 			 */
@@ -97,19 +98,19 @@ public class MemeResponderImpl implements MemeResponder {
 			}
 
 			/*
-			 * If mention does not begin with "@AskMemebot"
-			 * TODO: Dynamically generate username
+			 * If mention does not begin with "@AskMemebot" TODO: Dynamically
+			 * generate username
 			 */
 			if (!mention.getText().trim().substring(0, "@AskMemebot".length()).equalsIgnoreCase("@AskMemebot")) {
 				LOGGER.info("<> Non meme request detected - EXCLUDING MENTION: mention.getId()={}", mention.getIdStr());
 				continue mentionIteration;
 			}
-			
+
 			/*
-			 * If mention is not a reply to a tweet
-			 * TODO: Specify that it is not a reply to an @AskMemebot tweet
+			 * If mention is not a reply to a tweet TODO: Specify that it is not
+			 * a reply to an @AskMemebot tweet
 			 */
-			if(mention.getInReplyToStatusId() != null){
+			if (mention.getInReplyToStatusId() != null) {
 				LOGGER.info("<> Mention is a reply - EXCLUDING MENTION: mention.getId()={}", mention.getIdStr());
 				continue mentionIteration;
 			}
@@ -120,6 +121,54 @@ public class MemeResponderImpl implements MemeResponder {
 		return sanitizedMentions;
 	}
 
+	public TweetDataPayload constructTweetDataPayload(Tweet mention, List<Tweet> memeArchive) {
+		TweetDataPayload payload = new TweetDataPayload();
+
+		/*
+		 * Retrieve proper meme
+		 * TODO: Move this logic to the memeReloader
+		 */
+		Tweet memeTweet = null;
+		boolean properMemeFound = false;
+		while (!properMemeFound) {
+			int randomMemeIndex = (int) (Math.random() * ((double) memeArchive.size()));
+			memeTweet = memeArchive.get(randomMemeIndex);
+			if (!memeTweet.getEntities().getMedia().isEmpty() && !memeTweet.getText().contains("@")
+					&& !memeTweet.isRetweet()) {
+				properMemeFound = true;
+			}
+		}
+
+		/*
+		 * Set resources
+		 */
+		List<MediaEntity> mediaList = memeTweet.getEntities().getMedia();
+		List<Resource> payloadResource = new ArrayList<Resource>(mediaList.size());
+		for (MediaEntity media : mediaList) {
+			try {
+				Resource resource = new UrlResource(media.getMediaUrl());
+				payloadResource.add(resource);
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			}
+		}
+		payload.setResourceMediaList(payloadResource);
+
+		/*
+		 * Set message
+		 */
+		String payloadMessage = memeTweet.getText();
+		payload.setMessage("@" + mention.getFromUser() + System.getProperty("line.separator") + payloadMessage);
+
+		/*
+		 * Set replyToStatusId
+		 */
+		payload.setInReplyToStatusId(mention.getId());
+
+		return payload;
+	}
+
+	@Deprecated
 	public String constructReplyMessage(Tweet mention, List<Tweet> memeArchive) {
 		String username = "@" + mention.getFromUser();
 		int randomMemeIndex = (int) (Math.random() * ((double) memeArchive.size()));

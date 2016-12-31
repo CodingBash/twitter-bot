@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.io.Resource;
 import org.springframework.social.twitter.api.Tweet;
 import org.springframework.social.twitter.api.TweetData;
 import org.springframework.social.twitter.api.Twitter;
@@ -22,9 +23,12 @@ public class MemeSenderProductionImpl implements MemeSender {
 
 	@Override
 	public Tweet sendTweet(TweetDataPayload payload) {
-		LOGGER.info("< Sending tweet: payload.getInReplyToStatusId{}, payload.getMessage()={}",
+		LOGGER.info("< Sending tweet: payload.getInReplyToStatusId={}, payload.getMessage()={}",
 				payload.getInReplyToStatusId(), payload.getMessage());
 		TweetData tweetData = new TweetData(payload.getMessage()).inReplyToStatus(payload.getInReplyToStatusId());
+		for(Resource resource : payload.getResourceMediaList()){
+			tweetData.withMedia(resource);
+		}
 		Tweet sentTweet = twitter.timelineOperations().updateStatus(tweetData);
 		LOGGER.info("> Sent tweet: sentTweet.getId()={}", sentTweet.getId());
 		return sentTweet;

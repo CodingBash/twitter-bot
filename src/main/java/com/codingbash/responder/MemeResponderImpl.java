@@ -39,7 +39,7 @@ public class MemeResponderImpl implements MemeResponder {
 		LOGGER.info("< #replyToMentions: mentions.size()={}, memeArchive.size()={}, homeTweets.size()={}",
 				mentions.size(), memeArchive.size(), homeTweets.size());
 
-		mentions = removeDuplicates(mentions);
+		mentions = removeNonReplyMentions(mentions);
 
 		LOGGER.info("< Responding to each mention: mentions.size()={}", mentions.size());
 		TweetDataPayload payload;
@@ -65,8 +65,8 @@ public class MemeResponderImpl implements MemeResponder {
 
 	}
 
-	public List<Tweet> removeDuplicates(List<Tweet> mentions) {
-		LOGGER.info("< #removeDuplicates(): mentions.size()={}", mentions.size());
+	public List<Tweet> removeNonReplyMentions(List<Tweet> mentions) {
+		LOGGER.info("< #removeNonReplyMentions(): mentions.size()={}", mentions.size());
 
 		if (homeTweets.isEmpty()) {
 			LOGGER.info("< homeTweets empty - currently retrieving");
@@ -77,7 +77,10 @@ public class MemeResponderImpl implements MemeResponder {
 		List<Tweet> sanitizedMentions = new ArrayList<Tweet>(mentions.size());
 
 		mentionIteration: for (Tweet mention : mentions) {
-			LOGGER.info("<> Checking for duplicates");
+			
+			/*
+			 * If mention is already handled (duplicate)
+			 */
 			homeIteration: for (Tweet homeTweet : homeTweets) {
 				Long replyStatusId = homeTweet.getInReplyToStatusId();
 				if (mention.getId() == homeTweet.getId()) {
@@ -92,10 +95,28 @@ public class MemeResponderImpl implements MemeResponder {
 					continue mentionIteration;
 				}
 			}
+
+			/*
+			 * If mention does not begin with "@AskMemebot"
+			 * TODO: Dynamically generate username
+			 */
+			if (!mention.getText().trim().substring(0, "@AskMemebot".length()).equalsIgnoreCase("@AskMemebot")) {
+				LOGGER.info("<> Non meme request detected - EXCLUDING MENTION: mention.getId()={}", mention.getIdStr());
+				continue mentionIteration;
+			}
+			
+			/*
+			 * If mention is not a reply to a tweet
+			 * TODO: Specify that it is not a reply to an @AskMemebot tweet
+			 */
+			if(mention.getInReplyToStatusId() != null){
+				LOGGER.info("<> Mention is a reply - EXCLUDING MENTION: mention.getId()={}", mention.getIdStr());
+				continue mentionIteration;
+			}
 			sanitizedMentions.add(mention);
 		}
 
-		LOGGER.info("> #removeDuplicates(): sanitizedMentions.size()={}", sanitizedMentions.size());
+		LOGGER.info("> #removeNonReplyMentions(): sanitizedMentions.size()={}", sanitizedMentions.size());
 		return sanitizedMentions;
 	}
 

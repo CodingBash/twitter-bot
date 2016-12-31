@@ -43,7 +43,7 @@ public class MemeResponderImpl implements MemeResponder {
 		LOGGER.info("< #replyToMentions: mentions.size()={}, memeArchive.size()={}, homeTweets.size()={}",
 				mentions.size(), memeArchive.size(), homeTweets.size());
 
-		// mentions = removeNonReplyMentions(mentions);
+		mentions = removeNonReplyMentions(mentions);
 
 		LOGGER.info("< Responding to each mention: mentions.size()={}", mentions.size());
 		TweetDataPayload payload;

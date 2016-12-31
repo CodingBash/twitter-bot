@@ -43,7 +43,7 @@ public class MemeResponderImpl implements MemeResponder {
 		LOGGER.info("< #replyToMentions: mentions.size()={}, memeArchive.size()={}, homeTweets.size()={}",
 				mentions.size(), memeArchive.size(), homeTweets.size());
 
-		mentions = removeNonReplyMentions(mentions);
+		// mentions = removeNonReplyMentions(mentions);
 
 		LOGGER.info("< Responding to each mention: mentions.size()={}", mentions.size());
 		TweetDataPayload payload;
@@ -125,8 +125,7 @@ public class MemeResponderImpl implements MemeResponder {
 		TweetDataPayload payload = new TweetDataPayload();
 
 		/*
-		 * Retrieve proper meme
-		 * TODO: Move this logic to the memeReloader
+		 * Retrieve proper meme TODO: Move this logic to the memeReloader
 		 */
 		Tweet memeTweet = null;
 		boolean properMemeFound = false;
@@ -136,6 +135,7 @@ public class MemeResponderImpl implements MemeResponder {
 			if (!memeTweet.getEntities().getMedia().isEmpty() && !memeTweet.getText().contains("@")
 					&& !memeTweet.isRetweet()) {
 				properMemeFound = true;
+				memeArchive.remove(randomMemeIndex);
 			}
 		}
 
@@ -157,8 +157,12 @@ public class MemeResponderImpl implements MemeResponder {
 		/*
 		 * Set message
 		 */
-		String payloadMessage = memeTweet.getText();
-		payload.setMessage("@" + mention.getFromUser() + System.getProperty("line.separator") + payloadMessage);
+		int randomCustomMessageIndex = (int) (Math.random() * ((double) CUSTOM_MESSAGE_ARRAY.length));
+		String customMessage = CUSTOM_MESSAGE_ARRAY[randomCustomMessageIndex].replace("{}",
+				"@" + mention.getFromUser());
+		String memeMessage = memeTweet.getText();
+		payload.setMessage(customMessage + System.getProperty("line.separator") + System.getProperty("line.separator")
+				+ memeMessage);
 
 		/*
 		 * Set replyToStatusId

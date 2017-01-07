@@ -3,7 +3,6 @@ package com.codingbash.scheduler;
 import static com.codingbash.constant.MemeConstants.MAX_WAIT_RESPONSE_TIME_IN_MS;
 import static com.codingbash.constant.MemeConstants.MEME_ACCOUNTS;
 import static com.codingbash.constant.MemeConstants.MEME_ARCHIVE_SIZE_LIMIT;
-import static com.codingbash.constant.MemeConstants.POST_TWEET_INTERVAL_TIME_IN_MS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.social.twitter.api.ResourceFamily;
 import org.springframework.social.twitter.api.Tweet;
@@ -27,20 +25,16 @@ import com.codingbash.responder.MemeResponder;
 import com.codingbash.responder.MemeSender;
 import com.codingbash.retriever.MemeMentionsRetriever;
 
-/**
- * Schedules a trigger to retrieve all recent mentions and initiate reply
- * 
- * @author CodingBash
- *
- */
 @Component
-@Profile({ "development", "production" })
-public class MemeTriggerSchedulerImpl implements MemeTriggerScheduler {
+public class InputOutputScheduler {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MemeTriggerSchedulerImpl.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(InputOutputScheduler.class);
 
 	@Autowired
 	private Twitter twitter;
+
+	@Autowired
+	private Queue<TweetDataPayload> postTweetQueue;
 
 	@Autowired
 	private MemeMentionsRetriever memeMentionsRetriever;
@@ -49,30 +43,34 @@ public class MemeTriggerSchedulerImpl implements MemeTriggerScheduler {
 	private MemeResponder memeResponder;
 
 	@Autowired
-	private MemeUtility utility;
-
-	@Autowired
-	private Queue<TweetDataPayload> postTweetQueue;
-
-	@Autowired
 	private MemeSender memeSender;
 
 	@Autowired
 	private PostTweetLimiter limiter;
 
 	@Autowired
+	private MemeUtility utility;
+
+	@Autowired
 	@Qualifier("homeTweets")
 	private List<Tweet> homeTweets;
 
-	private List<Tweet> memeArchive = new ArrayList<Tweet>();
+	@Autowired
+	@Qualifier("memeArchive")
+	private List<Tweet> memeArchive;
 
+	// TODO: possible thread conflict??
 	private boolean responseFlag = false;
 
+	/**
+	 * Retrieves next response in the queue and sends
+	 */
 	@Scheduled(fixedDelay = 1000)
-	public void sendResponse() {
+	public void sendResponseTrigger() {
 		TweetDataPayload payload = postTweetQueue.peek();
-		// LOGGER.info("<> Sending tweet: limiter.get()={}, postTweetQueue.size={}", limiter.get(), postTweetQueue.size());
+		LOGGER.info("<> Sending tweet: limiter.get()={}, postTweetQueue.size={}", limiter.get(), postTweetQueue.size());
 		if (payload != null) {
+			System.out.println(payload.getMessage());
 			if (limiter.permit()) {
 				homeTweets.add(memeSender.sendTweet(payload));
 				postTweetQueue.remove();
@@ -84,50 +82,23 @@ public class MemeTriggerSchedulerImpl implements MemeTriggerScheduler {
 
 	}
 
-	@Override
+	/**
+	 * Retrieves the mentions
+	 */
 	@Scheduled(fixedDelay = MAX_WAIT_RESPONSE_TIME_IN_MS)
-	public void responseTrigger() {
+	public void retrieveMentionsTrigger() {
 		if (responseFlag == true) {
 			LOGGER.info("<> Response triggered");
 			List<Tweet> mentions = memeMentionsRetriever.retrieveMentions();
+			mentions = utility.removeDuplicates(mentions);
 			LOGGER.info("<> New mentions: mentions.size()={}", mentions.size());
-
 			if (mentions != null && mentions.size() != 0) {
 				while (memeArchive.size() == 0) {
-					reloadTheMemes();
+					utility.reloadTheMemes();
 				}
 				memeResponder.replyToMentions(mentions, memeArchive);
 			}
 			responseFlag = false;
 		}
 	}
-
-	@Override
-	@Scheduled(cron = "0 0 3 * * ?")
-	public void memeReloadTrigger() {
-		LOGGER.info("<> Meme reload triggered");
-		reloadTheMemes();
-	}
-
-	@Scheduled(fixedRate = POST_TWEET_INTERVAL_TIME_IN_MS)
-	public void refreshCounter() {
-		LOGGER.info("<> Refreshing the post limiter from a count of {}", limiter.get());
-		limiter.refresh();
-	}
-
-	public synchronized void reloadTheMemes() {
-		LOGGER.info("< #reloadTheMemes(): current memeArchive.size()={}", memeArchive.size());
-		List<String> memeAccounts = new ArrayList<String>();
-		for (String memeAccount : MEME_ACCOUNTS) {
-			memeAccounts.add(memeAccount);
-		}
-		final int MEME_ACCOUNT_SIZE_LIMIT = MEME_ARCHIVE_SIZE_LIMIT / memeAccounts.size();
-		memeArchive.clear();
-		for (String memeAccount : memeAccounts) {
-			utility.checkRateLimit(ResourceFamily.STATUSES, "/statuses/user_timeline");
-			memeArchive.addAll(twitter.timelineOperations().getUserTimeline(memeAccount, MEME_ACCOUNT_SIZE_LIMIT));
-		}
-		LOGGER.info("> #reloadTheMemes(): memeArchive.size()={}", memeArchive.size());
-	}
-
 }

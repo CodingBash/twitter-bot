@@ -45,8 +45,6 @@ public class MemeResponderImpl implements MemeResponder {
 		LOGGER.info("< #replyToMentions: mentions.size()={}, memeArchive.size()={}, homeTweets.size()={}",
 				mentions.size(), memeArchive.size(), homeTweets.size());
 
-		mentions = removeDuplicates(mentions);
-
 		LOGGER.info("< Responding to each mention: mentions.size()={}", mentions.size());
 
 		for (Tweet mention : mentions) {
@@ -92,6 +90,9 @@ public class MemeResponderImpl implements MemeResponder {
 			newAccount.setTwitterId(String.valueOf(mention.getFromUserId()));
 			newAccount.setUsername(mention.getFromUser());
 			account = memeAccountMongoRepository.save(newAccount);
+		} else {
+			account.setSubscribed(true);
+			memeAccountMongoRepository.save(account);
 		}
 		TweetDataPayload payload;
 		payload = new TweetDataPayload();
@@ -117,42 +118,6 @@ public class MemeResponderImpl implements MemeResponder {
 		String username = "@" + mention.getFromUser();
 		String message = username + " " + "You are now subscribed to daily memes";
 		return message;
-	}
-
-	public List<Tweet> removeDuplicates(List<Tweet> mentions) {
-		LOGGER.info("< #removeDuplicates(): mentions.size()={}", mentions.size());
-
-		if (homeTweets.isEmpty()) {
-			LOGGER.info("< homeTweets empty - currently retrieving");
-			homeTweets.addAll(twitter.timelineOperations().getUserTimeline(200));
-			LOGGER.info("> Retrieved homeTweets: homeTweets.size()={}", homeTweets.size());
-		}
-
-		List<Tweet> sanitizedMentions = new ArrayList<Tweet>(mentions.size());
-
-		mentionIteration: for (Tweet mention : mentions) {
-			LOGGER.info("<> Checking for duplicates");
-			homeIteration: for (Tweet homeTweet : homeTweets) {
-				if (homeTweet != null) {
-					Long replyStatusId = homeTweet.getInReplyToStatusId();
-					if (mention.getId() == homeTweet.getId()) {
-						LOGGER.info("<> Discovered self-mentioned tweet - EXCLUDING MENTION");
-						continue mentionIteration;
-					} else if (null == replyStatusId) {
-						LOGGER.info("<> Discovered no-reply self tweet - SKIPPING CHECK");
-						continue homeIteration;
-					} else if (mention.getId() == replyStatusId) {
-						LOGGER.info("<> Duplicate response detected - EXCLUDING MENTION: mention.getId()={}",
-								mention.getIdStr());
-						continue mentionIteration;
-					}
-				}
-			}
-			sanitizedMentions.add(mention);
-		}
-
-		LOGGER.info("> #removeDuplicates(): sanitizedMentions.size()={}", sanitizedMentions.size());
-		return sanitizedMentions;
 	}
 
 	public String constructReplyMessage(Tweet mention, List<Tweet> memeArchive) {

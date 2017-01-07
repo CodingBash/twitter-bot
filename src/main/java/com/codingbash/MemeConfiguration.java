@@ -62,7 +62,7 @@ public class MemeConfiguration {
 	@Bean
 	public ThreadPoolTaskScheduler taskScheduler() {
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-		scheduler.setPoolSize(2);
+		scheduler.setPoolSize(4);
 		return scheduler;
 	}
 
@@ -75,6 +75,7 @@ public class MemeConfiguration {
 	@Bean
 	public PostTweetLimiter limiter() {
 		PostTweetLimiter limiter = new PostTweetLimiter();
+		limiter.refresh();
 		return limiter;
 	}
 
@@ -83,4 +84,11 @@ public class MemeConfiguration {
 	public List<Tweet> homeList() {
 		return new CopyOnWriteArrayList<Tweet>();
 	}
+
+	@Bean
+	@Qualifier("memeArchive")
+	public List<Tweet> memeArchive() {
+		return new CopyOnWriteArrayList<Tweet>();
+	}
+
 }

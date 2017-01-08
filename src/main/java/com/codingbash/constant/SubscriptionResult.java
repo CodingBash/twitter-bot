@@ -1,0 +1,5 @@
+package com.codingbash.constant;
+
+public enum SubscriptionResult {
+	SUBSCRIPTION_SUCCESS, NEW_ACCOUNT_REGISTRATION_ERROR, SUBSCRIPTION_REGISTRATION_ERROR, ALREADY_SUBSCRIBE
+}

@@ -1,11 +1,13 @@
 package com.codingbash;
 
+import static com.codingbash.constant.MemeConstants.MAX_WAIT_RESPONSE_TIME_IN_MS;
 import static com.codingbash.constant.MemeConstants.MEME_ACCOUNTS;
 import static com.codingbash.constant.MemeConstants.MEME_ARCHIVE_SIZE_LIMIT;
 import static com.codingbash.constant.MemeConstants.RATE_LIMIT_CUSHION_AMOUNT;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,8 @@ import org.springframework.social.twitter.api.Tweet;
 import org.springframework.social.twitter.api.Twitter;
 import org.springframework.stereotype.Component;
 
+import com.codingbash.model.TweetDataPayload;
+
 @Component
 public class MemeUtility {
 
@@ -24,6 +28,9 @@ public class MemeUtility {
 
 	@Autowired
 	private Twitter twitter;
+
+	@Autowired
+	private Queue<TweetDataPayload> postTweetQueue;
 
 	@Autowired
 	@Qualifier("memeArchive")
@@ -101,5 +108,23 @@ public class MemeUtility {
 
 		LOGGER.info("> #removeDuplicates(): sanitizedMentions.size()={}", sanitizedMentions.size());
 		return sanitizedMentions;
+	}
+
+	/*
+	 * TODO: Determine to make synchronous
+	 */
+	public void addPayloadToQueue(TweetDataPayload payload) {
+		boolean addedSuccessfully = false;
+		do {
+			addedSuccessfully = postTweetQueue.offer(payload);
+			if (addedSuccessfully == false) {
+				LOGGER.warn("<> UNABLE TO POLL QUEUE, SLEEPING FOR {}", MAX_WAIT_RESPONSE_TIME_IN_MS);
+				try {
+					Thread.sleep(MAX_WAIT_RESPONSE_TIME_IN_MS);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		} while (addedSuccessfully == false);
 	}
 }

@@ -22,7 +22,8 @@ public class SubscriptionScheduler {
 	@Autowired
 	private MemeResponder memeResponder;
 
-	@Scheduled(cron = "0 0 9 * * ?")
+	// @Scheduled(cron = "0 0 9 * * ?")
+	@Scheduled(fixedRate = 10000)
 	public void sendSubscribedMemesTrigger() {
 		LOGGER.info("< #sendSubscribedMemesTrigger() - Subscription trigger initiated");
 

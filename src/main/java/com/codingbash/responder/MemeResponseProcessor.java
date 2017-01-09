@@ -29,7 +29,7 @@ public class MemeResponseProcessor {
 
 	public void processMentions(List<Tweet> mentions) {
 		LOGGER.info("< #processMentions: mentions.size()={}", mentions.size());
-		
+
 		for (Tweet mention : mentions) {
 			/*
 			 * Processor
@@ -37,7 +37,7 @@ public class MemeResponseProcessor {
 			if (mention.getText().toLowerCase().contains(" sub")) {
 				subscriptionResponder.createSubscriptionConfirmResponse(mention);
 			} else {
-				memeResponder.createMemeResponse(mention);
+				memeResponder.createMemeResponse(mention.getFromUser(), mention.getId());
 			}
 
 		}

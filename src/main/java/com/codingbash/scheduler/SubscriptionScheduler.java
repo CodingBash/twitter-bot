@@ -2,28 +2,39 @@ package com.codingbash.scheduler;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.codingbash.model.MemeAccount;
 import com.codingbash.repository.MemeAccountMongoRepository;
+import com.codingbash.responder.MemeResponder;
 
 @Component
 public class SubscriptionScheduler {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionScheduler.class);
 	@Autowired
 	private MemeAccountMongoRepository memeAccountMongoRepository;
 
-	//@Scheduled(fixedRate = 10000)
+	@Autowired
+	private MemeResponder memeResponder;
+
+	@Scheduled(fixedRate = 10000)
 	public void sendSubscribedMemesTrigger() {
+		LOGGER.info("< #sendSubscribedMemesTrigger() - Subscription trigger initiated");
+
 		List<MemeAccount> subscribedMemeAccounts = memeAccountMongoRepository.findBySubscribed(true);
+
+		LOGGER.info("<> #sendSubscribedMemesTrigger() - Retrieved subscribed meme accounts: subscribedMemeAccounts={}",
+				subscribedMemeAccounts.size());
+
 		for (MemeAccount memeAccount : subscribedMemeAccounts) {
-			System.out.println(memeAccount.getUsername());
+			memeResponder.createMemeResponse(memeAccount.getUsername(), null);
 		}
-		// TODO: This should now use the same method that responseTrigger uses.
-		// TODO: Send a meme to each person
-		// There should be no issue with rate limit since all responses are sent
-		// to a single queue
+
+		LOGGER.info("> #sendSubscribedMemesTrigger() - All subscription tweets sent to queue");
 	}
 }

@@ -86,22 +86,41 @@ public class MemeUtility {
 		List<Tweet> sanitizedMentions = new ArrayList<Tweet>(mentions.size());
 
 		mentionIteration: for (Tweet mention : mentions) {
-			LOGGER.info("<> Checking for duplicates");
+
+			/*
+			 * If mention is already handled (duplicate)
+			 */
 			homeIteration: for (Tweet homeTweet : homeTweets) {
-				if (homeTweet != null) {
-					Long replyStatusId = homeTweet.getInReplyToStatusId();
-					if (mention.getId() == homeTweet.getId()) {
-						LOGGER.info("<> Discovered self-mentioned tweet - EXCLUDING MENTION");
-						continue mentionIteration;
-					} else if (null == replyStatusId) {
-						LOGGER.info("<> Discovered no-reply self tweet - SKIPPING CHECK");
-						continue homeIteration;
-					} else if (mention.getId() == replyStatusId) {
-						LOGGER.info("<> Duplicate response detected - EXCLUDING MENTION: mention.getId()={}",
-								mention.getIdStr());
-						continue mentionIteration;
-					}
+				Long replyStatusId = homeTweet.getInReplyToStatusId();
+				if (mention.getId() == homeTweet.getId()) {
+					LOGGER.info("<> Discovered self-mentioned tweet - EXCLUDING MENTION");
+					continue mentionIteration;
+				} else if (null == replyStatusId) {
+					LOGGER.info("<> Discovered no-reply self tweet - SKIPPING CHECK");
+					continue homeIteration;
+				} else if (mention.getId() == replyStatusId) {
+					LOGGER.info("<> Duplicate response detected - EXCLUDING MENTION: mention.getId()={}",
+							mention.getIdStr());
+					continue mentionIteration;
 				}
+			}
+
+			/*
+			 * If mention does not begin with "@AskMemebot" TODO: Dynamically
+			 * generate username
+			 */
+			if (!mention.getText().trim().substring(0, "@AskMemebot".length()).equalsIgnoreCase("@AskMemebot")) {
+				LOGGER.info("<> Non meme request detected - EXCLUDING MENTION: mention.getId()={}", mention.getIdStr());
+				continue mentionIteration;
+			}
+
+			/*
+			 * If mention is not a reply to a tweet TODO: Specify that it is not
+			 * a reply to an @AskMemebot tweet
+			 */
+			if (mention.getInReplyToStatusId() != null) {
+				LOGGER.info("<> Mention is a reply - EXCLUDING MENTION: mention.getId()={}", mention.getIdStr());
+				continue mentionIteration;
 			}
 			sanitizedMentions.add(mention);
 		}

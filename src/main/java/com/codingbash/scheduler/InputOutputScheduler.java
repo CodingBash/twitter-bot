@@ -1,6 +1,7 @@
 package com.codingbash.scheduler;
 
 import static com.codingbash.constant.MemeConstants.MAX_WAIT_RESPONSE_TIME_IN_MS;
+import static com.codingbash.constant.MemeConstants.MIN_WAIT_RESPONSE_TIME_IN_MS;
 
 import java.util.List;
 import java.util.Queue;
@@ -53,11 +54,10 @@ public class InputOutputScheduler {
 	/**
 	 * Retrieves next response in the queue and sends
 	 */
-	@Scheduled(fixedDelay = 1000)
+	@Scheduled(fixedDelay = MIN_WAIT_RESPONSE_TIME_IN_MS)
 	public void sendResponseTrigger() {
 		TweetDataPayload payload = postTweetQueue.peek();
-		LOGGER.debug("<> Sending tweet: limiter.get()={}, postTweetQueue.size={}", limiter.get(),
-				postTweetQueue.size());
+		LOGGER.info("<> Sending tweet: limiter.get()={}, postTweetQueue.size={}", limiter.get(), postTweetQueue.size());
 		if (payload != null) {
 			System.out.println(payload.getMessage());
 			if (limiter.permit()) {
@@ -65,7 +65,7 @@ public class InputOutputScheduler {
 				postTweetQueue.remove();
 			}
 		} else {
-			LOGGER.debug("<> Post Tweet Queue is empty");
+			LOGGER.info("<> Post Tweet Queue is empty");
 			responseFlag = true;
 		}
 

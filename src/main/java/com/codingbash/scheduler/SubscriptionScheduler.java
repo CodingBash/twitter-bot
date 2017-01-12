@@ -5,6 +5,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,15 +21,16 @@ public class SubscriptionScheduler {
 	private MemeAccountMongoRepository memeAccountMongoRepository;
 
 	@Autowired
+	MongoTemplate template;
+	
+	@Autowired
 	private MemeResponder memeResponder;
 
 	// @Scheduled(cron = "0 0 9 * * ?")
 	@Scheduled(fixedRate = 10000)
 	public void sendSubscribedMemesTrigger() {
 		LOGGER.info("< #sendSubscribedMemesTrigger() - Subscription trigger initiated");
-
 		List<MemeAccount> subscribedMemeAccounts = memeAccountMongoRepository.findBySubscribed(true);
-
 		LOGGER.info("<> #sendSubscribedMemesTrigger() - Retrieved subscribed meme accounts: subscribedMemeAccounts={}",
 				subscribedMemeAccounts.size());
 

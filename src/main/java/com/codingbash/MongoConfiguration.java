@@ -19,6 +19,7 @@ import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 
 // TODO: Double check if production password is correct
+// TODO: Look into Devtools remote debugging
 @Configuration
 @EnableMongoRepositories("com.codingbash.repository")
 public class MongoConfiguration extends AbstractMongoConfiguration {
@@ -43,6 +44,22 @@ public class MongoConfiguration extends AbstractMongoConfiguration {
 		return this.dbName;
 	}
 
+	@Bean
+	public MongoClient mongoClient() {
+		final ServerAddress serverAddress = new ServerAddress(this.host, this.port);
+		MongoClient mongoClient = null;
+		if (!(StringUtils.isEmpty(this.userName) || StringUtils.isEmpty(this.password))) {
+			final List<MongoCredential> mongoCredentials = Arrays.asList(MongoCredential
+					.createScramSha1Credential(this.userName, getDatabaseName(), this.password.toCharArray()));
+			mongoClient = new MongoClient(serverAddress, mongoCredentials);
+			System.out.println("AUTHENTICATED: " + mongoCredentials.get(0).getUserName());
+		} else {
+			mongoClient = new MongoClient(serverAddress);
+		}
+		System.out.println(mongoClient.getCredentialsList().get(0).getPassword());
+		return mongoClient;
+	}
+
 	@Override
 	public Mongo mongo() throws Exception {
 		return mongoClient();
@@ -56,22 +73,6 @@ public class MongoConfiguration extends AbstractMongoConfiguration {
 	@Bean
 	public MongoTemplate mongoTemplate() {
 		return new MongoTemplate(mongoDbFactory(), null);
-	}
-
-	@Bean
-	public MongoClient mongoClient() {
-		final ServerAddress serverAddress = new ServerAddress(this.host, this.port);
-		MongoClient mongoClient = null;
-		if (!(StringUtils.isEmpty(this.userName) || StringUtils.isEmpty(this.password))) {
-			final List<MongoCredential> mongoCredentials = Arrays.asList(MongoCredential
-					.createMongoCRCredential(this.userName, getDatabaseName(), this.password.toCharArray()));
-			mongoClient = new MongoClient(serverAddress, mongoCredentials);
-			System.out.println("AUTHENTICATED: " + mongoCredentials.get(0).getUserName());
-		} else {
-			mongoClient = new MongoClient(serverAddress);
-		}
-
-		return mongoClient;
 	}
 
 }

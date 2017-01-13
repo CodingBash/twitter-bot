@@ -7,7 +7,7 @@ import com.codingbash.model.MemeAccount;
 
 public interface MemeRepository {
 
-	public SubscriptionResult registerSubscriptionStatus(TwitterProfile twitterProfile);
-
 	public MemeAccount registerNewUser(MemeAccount memeAccount);
+
+	public SubscriptionResult registerSubscriptionStatus(TwitterProfile twitterProfile, boolean willBeSubscribed);
 }

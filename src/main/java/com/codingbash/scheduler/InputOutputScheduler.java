@@ -59,7 +59,6 @@ public class InputOutputScheduler {
 		TweetDataPayload payload = postTweetQueue.peek();
 		LOGGER.info("<> Sending tweet: limiter.get()={}, postTweetQueue.size={}", limiter.get(), postTweetQueue.size());
 		if (payload != null) {
-			System.out.println(payload.getMessage());
 			if (limiter.permit()) {
 				homeTweets.add(memeSender.sendTweet(payload));
 				postTweetQueue.remove();

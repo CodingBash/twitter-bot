@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
-import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.social.twitter.api.Tweet;
@@ -23,6 +22,7 @@ import org.springframework.social.twitter.api.impl.TwitterTemplate;
 
 import com.codingbash.model.PostTweetLimiter;
 import com.codingbash.model.TweetDataPayload;
+import com.google.common.base.Stopwatch;
 
 @Configuration
 public class MemeConfiguration {
@@ -91,5 +91,4 @@ public class MemeConfiguration {
 	public List<Tweet> memeArchive() {
 		return new CopyOnWriteArrayList<Tweet>();
 	}
-
 }

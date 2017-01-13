@@ -15,11 +15,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.social.twitter.api.MediaEntity;
 import org.springframework.social.twitter.api.Tweet;
-import org.springframework.social.twitter.api.TwitterProfile;
 import org.springframework.stereotype.Component;
 
 import com.codingbash.MemeUtility;
-import com.codingbash.model.MemeAccount;
 import com.codingbash.model.TweetDataPayload;
 
 @Component

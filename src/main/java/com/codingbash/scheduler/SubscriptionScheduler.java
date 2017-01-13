@@ -2,6 +2,7 @@ package com.codingbash.scheduler;
 
 import java.util.List;
 
+import static com.codingbash.constant.MemeConstants.SUBSCRIPTION_SCHEDULER_CRON_JOB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +23,11 @@ public class SubscriptionScheduler {
 
 	@Autowired
 	MongoTemplate template;
-	
+
 	@Autowired
 	private MemeResponder memeResponder;
 
-	@Scheduled(cron = "0 0 9 * * ?")
+	@Scheduled(cron = SUBSCRIPTION_SCHEDULER_CRON_JOB)
 	public void sendSubscribedMemesTrigger() {
 		LOGGER.info("< #sendSubscribedMemesTrigger() - Subscription trigger initiated");
 		List<MemeAccount> subscribedMemeAccounts = memeAccountMongoRepository.findBySubscribed(true);

@@ -91,6 +91,13 @@ public class MemeUtility {
 			 * If mention is already handled (duplicate)
 			 */
 			homeIteration: for (Tweet homeTweet : homeTweets) {
+				if(homeTweet == null){
+					/* TODO: HANDLE HOMETWEET FOR NULLS (Since development sender returns a null)
+					 * -Should I have a development version of removeDuplicates?
+					 * --Go with this implmentation first, and keep a todo in
+					 */
+					continue homeIteration;
+				}
 				Long replyStatusId = homeTweet.getInReplyToStatusId();
 				if (mention.getId() == homeTweet.getId()) {
 					LOGGER.info("<> Discovered self-mentioned tweet - EXCLUDING MENTION");

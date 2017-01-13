@@ -29,4 +29,7 @@ public class MemeConstants {
 
 	// TODO: Put in application.yaml
 	public static final int RATE_LIMIT_CUSHION_AMOUNT = 5;
+	
+	// TODO: Put in application.yaml
+	public static final String SUBSCRIPTION_SCHEDULER_CRON_JOB = "0 0 9 * * ?";
 }

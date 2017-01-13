@@ -22,34 +22,48 @@ public class SubscriptionResponder {
 	@Autowired
 	private MemeUtility memeUtility;
 
-	public void createSubscriptionConfirmResponse(Tweet mention) {
+	public void createSubscriptionActionConfirmResponse(Tweet mention, boolean willBeSubscribed) {
 		LOGGER.info("< #createSubscriptionConfirmResponse(): mention.getText()={}", mention.getText());
 
-		SubscriptionResult subscriptionResult = memeRepository.registerSubscriptionStatus(mention.getUser());
+		SubscriptionResult subscriptionResult = memeRepository.registerSubscriptionStatus(mention.getUser(),
+				willBeSubscribed);
 
 		TweetDataPayload payload;
 		payload = new TweetDataPayload();
 		payload.setInReplyToStatusId(mention.getId());
-		payload.setMessage(constructSubscriptionReplyMessage(mention, subscriptionResult));
+		payload.setMessage(constructSubscriptionReplyMessage(mention, subscriptionResult, willBeSubscribed));
 
 		memeUtility.addPayloadToQueue(payload);
 
 		LOGGER.info("> #createSubscriptionConfirmResponse(): registrationResult={}", subscriptionResult);
 	}
 
-	private String constructSubscriptionReplyMessage(Tweet mention, SubscriptionResult subscriptionResult) {
+	private String constructSubscriptionReplyMessage(Tweet mention, SubscriptionResult subscriptionResult,
+			boolean willBeSubscribed) {
 		String username = "@" + mention.getFromUser();
 		String message = "";
 		switch (subscriptionResult) {
-		case SUBSCRIPTION_SUCCESS:
-			message = "You are now subscribed for daily memes.";
+		case SUBSCRIPTION_ACTION_SUCCESS:
+			if (willBeSubscribed) {
+				message = "You are now subscribed for daily memes";
+			} else {
+				message = "You are now unsubscribed :(";
+			}
 			break;
-		case ALREADY_SUBSCRIBE:
-			message = "You are already subscribed.";
+		case NO_ACTION_NECESSARY:
+			if (willBeSubscribed) {
+				message = "You are already subscribed";
+			} else {
+				message = "You are already unsubscribed";
+			}
 			break;
 		case NEW_ACCOUNT_REGISTRATION_ERROR:
-		case SUBSCRIPTION_REGISTRATION_ERROR:
-			message = "Unable to subscribe.";
+		case SUBSCRIPTION_ACTION_REGISTRATION_ERROR:
+			if (willBeSubscribed) {
+				message = "Unable to subscribe";
+			} else {
+				message = "Unable to unsubscribe";
+			}
 			break;
 
 		}

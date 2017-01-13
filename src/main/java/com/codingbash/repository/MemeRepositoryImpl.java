@@ -18,7 +18,10 @@ public class MemeRepositoryImpl implements MemeRepository {
 	private MemeAccountMongoRepository memeAccountMongoRepository;
 
 	@Override
-	public SubscriptionResult registerSubscriptionStatus(TwitterProfile twitterProfile) {
+	public SubscriptionResult registerSubscriptionStatus(TwitterProfile twitterProfile, boolean willBeSubscribed) {
+		LOGGER.info(
+				"<> #registerSubscriptionStatus() - Begin subscription registration: twitterProfile.getId()={}, twitterProfile.getScreenName()={}, willBeSubscribed={}",
+				twitterProfile.getId(), twitterProfile.getScreenName(), willBeSubscribed);
 		// See if account already registered in MongoDB
 		MemeAccount account = memeAccountMongoRepository.findByTwitterId(String.valueOf(twitterProfile.getId()));
 
@@ -34,7 +37,7 @@ public class MemeRepositoryImpl implements MemeRepository {
 
 			account = new MemeAccount();
 			account.setPoints(0);
-			account.setSubscribed(true);
+			account.setSubscribed(willBeSubscribed);
 			account.setTwitterId(String.valueOf(twitterProfile.getId()));
 			account.setUsername(twitterProfile.getScreenName());
 
@@ -45,7 +48,7 @@ public class MemeRepositoryImpl implements MemeRepository {
 			 */
 			if (account == null) {
 
-				LOGGER.info("<> #registerSubscriptionStatus() - Unable to create account: twitterProfile.getId={}",
+				LOGGER.warn("<> #registerSubscriptionStatus() - Unable to create account: twitterProfile.getId={}",
 						twitterProfile.getId());
 				return SubscriptionResult.NEW_ACCOUNT_REGISTRATION_ERROR;
 			}
@@ -61,26 +64,25 @@ public class MemeRepositoryImpl implements MemeRepository {
 			LOGGER.info(
 					"<> #registerSubscriptionStatus() - Account already registered: account.getTwitterId(), account.getMongoId()={}, account.isSubscribed()={}",
 					account.getTwitterId(), account.getMongoId(), account.isSubscribed());
-			if (account.isSubscribed() == true) {
+			if (account.isSubscribed() == willBeSubscribed) {
 				LOGGER.info(
-						"<> #registerSubscriptionStatus() - Account already subscribed: account.getTwitterId()={}, account.getMongoId()",
+						"<> #registerSubscriptionStatus() - Account already updated: account.getTwitterId()={}, account.getMongoId()",
 						account.getTwitterId(), account.getMongoId());
-				return SubscriptionResult.ALREADY_SUBSCRIBE;
+				return SubscriptionResult.NO_ACTION_NECESSARY;
 			} else {
 				LOGGER.info(
-						"<> #registerSubscriptionStatus() - Account not subscribed, now subscribing: account.getTwitterId()={}, account.getMongoId()={}",
+						"<> #registerSubscriptionStatus() - Account not updated, now updating: account.getTwitterId()={}, account.getMongoId()={}",
 						account.getTwitterId(), account.getMongoId());
-				account.setSubscribed(true);
+				account.setSubscribed(willBeSubscribed);
 				account = memeAccountMongoRepository.save(account);
 				if (account == null) {
-					LOGGER.info(
-							"<> #registerSubscriptionStatus() - Unable to subscribe account: twitterProfile.getId={}",
+					LOGGER.warn("<> #registerSubscriptionStatus() - Unable to update account: twitterProfile.getId={}",
 							twitterProfile.getId());
-					return SubscriptionResult.SUBSCRIPTION_REGISTRATION_ERROR;
+					return SubscriptionResult.SUBSCRIPTION_ACTION_REGISTRATION_ERROR;
 				}
 			}
 		}
-		return SubscriptionResult.SUBSCRIPTION_SUCCESS;
+		return SubscriptionResult.SUBSCRIPTION_ACTION_SUCCESS;
 	}
 
 	@Override
@@ -96,5 +98,4 @@ public class MemeRepositoryImpl implements MemeRepository {
 
 		return memeAccount;
 	}
-
 }

@@ -2,6 +2,7 @@ package com.codingbash.scheduler;
 
 import static com.codingbash.constant.MemeConstants.POST_TWEET_INTERVAL_TIME_IN_MS;
 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ public class RefresherScheduler {
 
 	@Autowired
 	private MemeUtility utility;
-
+	
 	@Scheduled(fixedRate = POST_TWEET_INTERVAL_TIME_IN_MS)
 	public void refreshCounterTrigger() {
 		LOGGER.info("<> Refreshing the post limiter from a count of {}", limiter.get());

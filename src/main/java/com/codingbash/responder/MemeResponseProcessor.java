@@ -38,7 +38,7 @@ public class MemeResponseProcessor {
 				subscriptionResponder.createSubscriptionActionConfirmResponse(mention, true);
 			} else if (mention.getText().toLowerCase().contains(" unsub")){
 				subscriptionResponder.createSubscriptionActionConfirmResponse(mention, false);
-			}{
+			} else {
 				memeResponder.createMemeResponse(mention.getFromUser(), mention.getId());
 			}
 

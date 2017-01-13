@@ -27,7 +27,8 @@ public class SubscriptionScheduler {
 	@Autowired
 	private MemeResponder memeResponder;
 
-	@Scheduled(cron = SUBSCRIPTION_SCHEDULER_CRON_JOB)
+	// @Scheduled(cron = SUBSCRIPTION_SCHEDULER_CRON_JOB)
+	@Scheduled(fixedRate = 3600000)
 	public void sendSubscribedMemesTrigger() {
 		LOGGER.info("< #sendSubscribedMemesTrigger() - Subscription trigger initiated");
 		List<MemeAccount> subscribedMemeAccounts = memeAccountMongoRepository.findBySubscribed(true);

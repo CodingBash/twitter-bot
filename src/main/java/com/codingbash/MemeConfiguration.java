@@ -22,7 +22,6 @@ import org.springframework.social.twitter.api.impl.TwitterTemplate;
 
 import com.codingbash.model.PostTweetLimiter;
 import com.codingbash.model.TweetDataPayload;
-import com.google.common.base.Stopwatch;
 
 @Configuration
 public class MemeConfiguration {
@@ -90,5 +89,11 @@ public class MemeConfiguration {
 	@Qualifier("memeArchive")
 	public List<Tweet> memeArchive() {
 		return new CopyOnWriteArrayList<Tweet>();
+	}
+	
+	@Bean
+	@Qualifier("lastTweetId")
+	public Long lastTweetId(){
+		return null;
 	}
 }

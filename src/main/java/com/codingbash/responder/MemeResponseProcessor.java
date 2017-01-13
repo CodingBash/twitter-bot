@@ -23,10 +23,6 @@ public class MemeResponseProcessor {
 	@Autowired
 	private SubscriptionResponder subscriptionResponder;
 
-	@Autowired
-	@Qualifier("homeTweets")
-	private List<Tweet> homeTweets;
-
 	public void processMentions(List<Tweet> mentions) {
 		LOGGER.info("< #processMentions: mentions.size()={}", mentions.size());
 
